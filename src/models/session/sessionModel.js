@@ -5,12 +5,12 @@ export const insertSession = (sessionObj) => {
 };
 
 export const getSession = (filter) => {
-  return SessionSchema.findOne(filter);
+  return sessionSchema.findOne(filter);
 };
 
 export const deleteSession = (filter) => {
-  return SessionSchema.findOneAndDelete(filter);
+  return sessionSchema.findOneAndDelete(filter);
 };
 export const deleteManySession = (filter) => {
-  return SessionSchema.deleteMany(filter);
+  return sessionSchema.deleteMany(filter);
 };

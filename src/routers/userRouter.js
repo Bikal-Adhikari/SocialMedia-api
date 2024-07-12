@@ -1,8 +1,11 @@
 import express from "express";
-import { insertUser } from "../models/user/userModel.js";
+import { insertUser, updateUser } from "../models/user/userModel.js";
 import { newUserValidation } from "../middlewares/joiValidation.js";
 import { v4 as uuidv4 } from "uuid";
-import { insertSession } from "../models/session/sessionModel.js";
+import {
+  deleteSession,
+  insertSession,
+} from "../models/session/sessionModel.js";
 import { emailVerificationMail } from "../services/nodemailer.js";
 
 const router = express.Router();
@@ -37,6 +40,43 @@ router.post("/", newUserValidation, async (req, res, next) => {
     res.json({
       status: "error",
       message: "Error Unable to create an account, Contact administration",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+//user verification
+router.post("/user-verification", async (req, res, next) => {
+  try {
+    const { c, e } = req.body;
+    //delete session data
+
+    const session = await deleteSession({
+      token: c,
+      associate: e,
+    });
+    if (session?._id) {
+      //update user table
+      const result = await updateUser(
+        { email: e },
+        {
+          status: "active",
+          isEmailVerified: true,
+        }
+      );
+      if (result?._id) {
+        // send user an email
+        return res.json({
+          status: "success",
+          message: "Your account has been verified. You may sign in now",
+        });
+      }
+    }
+
+    res.json({
+      status: "error",
+      message: "Invalid link, contact admin",
     });
   } catch (error) {
     next(error);
