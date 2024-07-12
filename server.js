@@ -13,6 +13,9 @@ app.use(morgan("dev"));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
+import routers from "./src/routers/routers.js";
+routers.forEach(({ path, middlewares }) => app.use(path, ...middlewares));
+
 app.get("/", (req, res, next) => {
   res.json({
     status: "success",
