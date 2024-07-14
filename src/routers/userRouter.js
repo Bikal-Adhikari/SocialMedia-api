@@ -1,5 +1,5 @@
 import express from "express";
-import { insertUser, updateUser } from "../models/user/userModel.js";
+import { getAUser, insertUser, updateUser } from "../models/user/userModel.js";
 import { newUserValidation } from "../middlewares/joiValidation.js";
 import { v4 as uuidv4 } from "uuid";
 import {
@@ -8,6 +8,8 @@ import {
 } from "../models/session/sessionModel.js";
 import { emailVerificationMail } from "../services/nodemailer.js";
 import { auth } from "../middlewares/auth.js";
+import { getTokens } from "../utils/jwt.js";
+import { comparePassword } from "../utils/bcrypt.js";
 
 const router = express.Router();
 
@@ -100,6 +102,49 @@ router.get("/", auth, async (req, res, next) => {
           message:
             "your account has not been activated. Check your email to verify your account",
         });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// login user
+router.post("/login", async (req, res, next) => {
+  try {
+    let message = "";
+    const { email, password } = req.body;
+    // 1. check if user exist with email
+    const user = await getAUser({ email });
+
+    if (user?._id && user?.status === "active" && user?.isEmailVerified) {
+      //verify passwords
+
+      const confirmPass = comparePassword(password, user.password);
+
+      if (confirmPass) {
+        //user is now authenticated
+
+        // create jwts then return
+
+        return res.json({
+          status: "success",
+          message: "Login Successful",
+          jwts: await getTokens(email),
+        });
+      }
+    }
+
+    if (user?.status === "inactive") {
+      message = "Your account is not active, contact admin";
+    }
+
+    if (!user?.isEmailVerified) {
+      message = "User not verified, please check your email and verify";
+    }
+
+    res.json({
+      status: "error",
+      message: message || "Invalid login details",
+    });
   } catch (error) {
     next(error);
   }
