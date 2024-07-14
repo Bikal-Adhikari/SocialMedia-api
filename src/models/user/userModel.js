@@ -7,3 +7,7 @@ export const insertUser = (userObj) => {
 export const updateUser = (filter, obj) => {
   return userSchema.findOneAndUpdate(filter, obj);
 };
+
+export const getAUser = (filter) => {
+  return userSchema.findOne(filter);
+};
