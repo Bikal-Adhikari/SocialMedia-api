@@ -7,6 +7,7 @@ import {
   insertSession,
 } from "../models/session/sessionModel.js";
 import { emailVerificationMail } from "../services/nodemailer.js";
+import { auth } from "../middlewares/auth.js";
 
 const router = express.Router();
 
@@ -84,7 +85,7 @@ router.post("/user-verification", async (req, res, next) => {
 });
 
 // fetching user
-router.get("/", async (req, res, next) => {
+router.get("/", auth, async (req, res, next) => {
   try {
     const { userInfo } = req;
     userInfo.refreshJWT = undefined;
