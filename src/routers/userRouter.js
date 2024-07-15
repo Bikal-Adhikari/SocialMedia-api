@@ -3,6 +3,7 @@ import { getAUser, insertUser, updateUser } from "../models/user/userModel.js";
 import { newUserValidation } from "../middlewares/joiValidation.js";
 import { v4 as uuidv4 } from "uuid";
 import {
+  deleteManySession,
   deleteSession,
   insertSession,
 } from "../models/session/sessionModel.js";
@@ -162,6 +163,29 @@ router.get("/new-accessjwt", jwtAuth, async (req, res, next) => {
         accessJWT,
       });
     }
+  } catch (error) {
+    next(error);
+  }
+});
+
+// logout user
+router.delete("/logout", auth, async (req, res, next) => {
+  try {
+    const { email } = req.userInfo;
+
+    await updateUser(
+      {
+        email,
+      },
+      { refreshJWT: "" }
+    );
+
+    await deleteManySession({ associate: email });
+
+    res.json({
+      status: "success",
+      message: "Logged out successfully",
+    });
   } catch (error) {
     next(error);
   }
