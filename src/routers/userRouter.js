@@ -7,10 +7,10 @@ import {
   deleteSession,
   insertSession,
 } from "../models/session/sessionModel.js";
-import { emailVerificationMail } from "../services/nodemailer.js";
+import { accountUpdatedNotification, emailVerificationMail, sendOtpMail } from "../services/nodemailer.js";
 import { auth, jwtAuth } from "../middlewares/auth.js";
 import { getTokens, signAccessJWT } from "../utils/jwt.js";
-import { comparePassword } from "../utils/bcrypt.js";
+import { comparePassword, hashPassword } from "../utils/bcrypt.js";
 import { otpGenerator } from "../utils/otp.js";
 
 const router = express.Router();
@@ -212,6 +212,40 @@ router.post("/otp", async (req, res, next) => {
       status: "success",
       message:
         "If your email exists in our system, please check your email for OTP",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+router.patch("/password/reset", async (req, res, next) => {
+  try {
+    const { email, otp, password } = req.body;
+    if ((email, otp, password)) {
+      const session = await deleteSession({
+        token: otp,
+        associate: email,
+        type: "otp",
+      });
+      if (session?._id) {
+        //update user table with new hashPass
+        const user = await updateUser(
+          { email },
+          { password: hashPassword(password) }
+        );
+        if (user?._id) {
+          accountUpdatedNotification({ email, fName: user.fName });
+          res.json({
+            status: "success",
+            message: "Your password has been reset successfully",
+          });
+        }
+      }
+    }
+
+    res.json({
+      status: "error",
+      message: "Invalid data, please try again later",
     });
   } catch (error) {
     next(error);
