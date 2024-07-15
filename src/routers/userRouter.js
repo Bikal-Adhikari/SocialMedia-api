@@ -11,6 +11,7 @@ import { emailVerificationMail } from "../services/nodemailer.js";
 import { auth, jwtAuth } from "../middlewares/auth.js";
 import { getTokens, signAccessJWT } from "../utils/jwt.js";
 import { comparePassword } from "../utils/bcrypt.js";
+import { otpGenerator } from "../utils/otp.js";
 
 const router = express.Router();
 
@@ -185,6 +186,32 @@ router.delete("/logout", auth, async (req, res, next) => {
     res.json({
       status: "success",
       message: "Logged out successfully",
+    });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Password reset
+router.post("/otp", async (req, res, next) => {
+  try {
+    const { email } = req.body;
+    const user = await getAUser({ email });
+    if (user?._id) {
+      const token = otpGenerator();
+
+      const session = await insertSession({
+        token,
+        associate: email,
+        type: "otp",
+      });
+      session?._id && sendOtpMail({ token, fName: user.fName, email });
+    }
+
+    res.json({
+      status: "success",
+      message:
+        "If your email exists in our system, please check your email for OTP",
     });
   } catch (error) {
     next(error);
