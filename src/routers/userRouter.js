@@ -7,8 +7,8 @@ import {
   insertSession,
 } from "../models/session/sessionModel.js";
 import { emailVerificationMail } from "../services/nodemailer.js";
-import { auth } from "../middlewares/auth.js";
-import { getTokens } from "../utils/jwt.js";
+import { auth, jwtAuth } from "../middlewares/auth.js";
+import { getTokens, signAccessJWT } from "../utils/jwt.js";
 import { comparePassword } from "../utils/bcrypt.js";
 
 const router = express.Router();
@@ -145,6 +145,23 @@ router.post("/login", async (req, res, next) => {
       status: "error",
       message: message || "Invalid login details",
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// return access jwt
+router.get("/new-accessjwt", jwtAuth, async (req, res, next) => {
+  try {
+    const { email } = req.userInfo;
+    const accessJWT = await signAccessJWT(email);
+    if (accessJWT) {
+      return res.json({
+        status: "success",
+        message: "",
+        accessJWT,
+      });
+    }
   } catch (error) {
     next(error);
   }
