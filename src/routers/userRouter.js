@@ -1,13 +1,22 @@
 import express from "express";
-import { getAUser, insertUser, updateUser } from "../models/user/userModel.js";
-import { newUserValidation } from "../middlewares/joiValidation.js";
+import {
+  getAUser,
+  insertUser,
+  updateUser,
+  updateUserById,
+} from "../models/user/userModel.js";
+import { newUserValidation, updateUserValidation } from "../middlewares/joiValidation.js";
 import { v4 as uuidv4 } from "uuid";
 import {
   deleteManySession,
   deleteSession,
   insertSession,
 } from "../models/session/sessionModel.js";
-import { accountUpdatedNotification, emailVerificationMail, sendOtpMail } from "../services/nodemailer.js";
+import {
+  accountUpdatedNotification,
+  emailVerificationMail,
+  sendOtpMail,
+} from "../services/nodemailer.js";
 import { auth, jwtAuth } from "../middlewares/auth.js";
 import { getTokens, signAccessJWT } from "../utils/jwt.js";
 import { comparePassword, hashPassword } from "../utils/bcrypt.js";
@@ -247,6 +256,40 @@ router.patch("/password/reset", async (req, res, next) => {
       status: "error",
       message: "Invalid data, please try again later",
     });
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update User Details
+router.put("/:_id", updateUserValidation, async (req, res, next) => {
+  try {
+    const { _id } = req.params;
+    const { password, email, ...rest } = req.body;
+    const user = await getAUser({ email });
+    if (user?._id === _id) {
+      const confirmPass = comparePassword(password, user.password);
+      if (confirmPass) {
+        const updatedUser = await updateUserById(_id, req.body);
+        if (updatedUser?._id) {
+          return res.json({
+            status: "success",
+            message: "Login Successful",
+            data: updatedUser,
+          });
+        }
+      } else {
+        return res.json({
+          status: "error",
+          message: "Invalid Password",
+        });
+      }
+    } else {
+      return res.json({
+        status: "error",
+        message: "Invalid User",
+      });
+    }
   } catch (error) {
     next(error);
   }
