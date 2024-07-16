@@ -1,11 +1,15 @@
 import express from "express";
 import {
   getAUser,
+  getUserById,
   insertUser,
   updateUser,
   updateUserById,
 } from "../models/user/userModel.js";
-import { newUserValidation, updateUserValidation } from "../middlewares/joiValidation.js";
+import {
+  newUserValidation,
+  updateUserValidation,
+} from "../middlewares/joiValidation.js";
 import { v4 as uuidv4 } from "uuid";
 import {
   deleteManySession,
@@ -276,6 +280,40 @@ router.put("/:_id", updateUserValidation, async (req, res, next) => {
             status: "success",
             message: "Login Successful",
             data: updatedUser,
+          });
+        }
+      } else {
+        return res.json({
+          status: "error",
+          message: "Invalid Password",
+        });
+      }
+    } else {
+      return res.json({
+        status: "error",
+        message: "Invalid User",
+      });
+    }
+  } catch (error) {
+    next(error);
+  }
+});
+
+// Update User Password
+router.put("/:_id/password", async (req, res, next) => {
+  try {
+    const { _id } = req.params;
+    const { oldPassword, password } = req.body;
+    const user = await getUserById(_id);
+    if (user?._id) {
+      const confirmPass = comparePassword(oldPassword, user.password);
+      if (confirmPass) {
+        password = hashPassword(password);
+        const updatedUser = await updateUserById(_id, { password });
+        if (updatedUser?._id) {
+          return res.json({
+            status: "success",
+            message: "Password Updated Successfully",
           });
         }
       } else {
