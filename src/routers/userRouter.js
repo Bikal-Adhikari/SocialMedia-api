@@ -206,30 +206,30 @@ router.delete("/logout", auth, async (req, res, next) => {
 });
 
 // Password reset
-router.post("/otp", async (req, res, next) => {
-  try {
-    const { email } = req.body;
-    const user = await getAUser({ email });
-    if (user?._id) {
-      const token = otpGenerator();
+// router.post("/otp", async (req, res, next) => {
+//   try {
+//     const { email } = req.body;
+//     const user = await getAUser({ email });
+//     if (user?._id) {
+//       const token = otpGenerator();
 
-      const session = await insertSession({
-        token,
-        associate: email,
-        type: "otp",
-      });
-      session?._id && sendOtpMail({ token, fName: user.fName, email });
-    }
+//       const session = await insertSession({
+//         token,
+//         associate: email,
+//         type: "otp",
+//       });
+//       session?._id && sendOtpMail({ token, fName: user.fName, email });
+//     }
 
-    res.json({
-      status: "success",
-      message:
-        "If your email exists in our system, please check your email for OTP",
-    });
-  } catch (error) {
-    next(error);
-  }
-});
+//     res.json({
+//       status: "success",
+//       message:
+//         "If your email exists in our system, please check your email for OTP",
+//     });
+//   } catch (error) {
+//     next(error);
+//   }
+// });
 
 router.patch("/password/reset", async (req, res, next) => {
   try {
