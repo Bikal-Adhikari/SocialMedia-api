@@ -1,9 +1,37 @@
 import express from "express";
 import cors from "cors";
 import morgan from "morgan";
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from "url";
 
 const app = express();
 const PORT = process.env.PORT || 8000;
+
+// Directory setup for uploads
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const uploadDirectory = path.join(__dirname, 'uploads');
+
+// Ensure upload directory exists
+import fs from 'fs';
+if (!fs.existsSync(uploadDirectory)) {
+  fs.mkdirSync(uploadDirectory);
+}
+
+// Set up storage configuration for multer
+const storage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, uploadDirectory); // Directory to save the uploaded files
+  },
+  filename: (req, file, cb) => {
+    // Append original file extension
+    cb(null, Date.now() + path.extname(file.originalname));
+  }
+});
+
+// Create the multer instance with the storage configuration
+const upload = multer({ storage });
 
 import { connectDb } from "./src/config/dbConfig.js";
 connectDb();
@@ -21,6 +49,14 @@ app.get("/", (req, res, next) => {
     status: "success",
     message: "server is live",
   });
+});
+
+// Endpoint to handle image uploads
+app.post("/upload", upload.single("image"), (req, res) => {
+  if (!req.file) {
+    return res.status(400).json({ status: "error", message: "No file uploaded." });
+  }
+  res.status(200).json({ status: "success", message: `File uploaded successfully: ${req.file.path}` });
 });
 
 app.use("*", (req, res, next) => {
